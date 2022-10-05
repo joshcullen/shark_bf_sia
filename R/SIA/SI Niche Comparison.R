@@ -6,6 +6,8 @@ library(tidyverse)
 library(SIBER)
 library(ggdist)
 library(MetBrewer)
+library(patchwork)
+library(tictoc)
 
 
 ### Load data ###
@@ -14,15 +16,15 @@ sia <- read.csv("Raw_data/SIA Master.csv")
 glimpse(sia)
 summary(sia)
 head(sia)
-# sia$Sample.Yr<- factor(sia$Sample.Yr) #turn sampled year into a factor
-
+sia$Species <- factor(sia$Species, level = c('Cleu','BT','BH'))
+levels(sia$Species) <- c('Bull','Blacktip','Bonnethead')
 
 
 ### Clean and wrangle data ###
 
 #Check for duplicates and remove record(s) for any duplicate IDs
 ind <- which(duplicated(sia$SharkID) | is.na(sia$TL))
-sia <- sia[-ind,]
+# sia <- sia[-ind,]
 
 
 
@@ -82,7 +84,7 @@ SEA.B <- siberEllipses(ellipses.posterior)
 
 
 # Viz comparison of isotopic niche areas
-siberDensityPlot(SEA.B, xticklabels = c('Cleu','Clim','Stib'),
+siberDensityPlot(SEA.B, xticklabels = c('Blacktip','Bonnethead', 'Bull'),
                  xlab = c("Species"),
                  ylab = expression("Standard Ellipse Area " ('\u2030' ^2) ),
                  bty = "L",
@@ -91,13 +93,13 @@ siberDensityPlot(SEA.B, xticklabels = c('Cleu','Clim','Stib'),
 )
 
 SEA.B.df <- data.frame(SEA.B) %>%
-  rename(Bull = X1, Blacktip = X2, Bonnethead = X3) %>%
+  rename(Blacktip = X1, Bonnethead = X2, Bull = X3) %>%
   mutate(iter = 1:n()) %>%
   pivot_longer(cols = -iter, names_to = "species", values_to = 'SEA') %>%
   mutate(across(species, factor, level = c('Bull','Blacktip','Bonnethead')))
 
 
-ggplot(SEA.B.df, aes(species, SEA)) +
+p.nw <- ggplot(SEA.B.df, aes(species, SEA)) +
   ggdist::stat_halfeye(aes(fill = species), adjust = 0.5, width = 0.6, .width = 0,
                        justification = -0.3, point_color = NA) +
   scale_fill_met_d(name = "Egypt") +
@@ -105,7 +107,7 @@ ggplot(SEA.B.df, aes(species, SEA)) +
   scale_color_met_d(name = "Egypt") +
   geom_boxplot(width = 0.2, outlier.shape = NA, fill = "transparent") +
   scale_y_continuous(breaks = seq(0, 14, by = 2)) +
-  labs(x = "", y = expression("Standard Ellipse Area " ('\u2030' ^2) )) +
+  labs(x = "", y = expression("Ellipse Area " ('\u2030' ^2) )) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         axis.title = element_text(size = 18),
@@ -125,6 +127,93 @@ SEA.B.credibles <- lapply(
   prob = cr.p)
 
 SEA.B.credibles
+
+
+
+
+
+### Plot subset Bayesian posterior ellipses ###
+
+n.posts <- 50  #number of posterior draws
+p.ell <- 0.95  #95% quantile ellipse
+
+
+# a list to store the results
+all_ellipses <- list()
+
+# loop over groups
+for (i in 1:length(ellipses.posterior)){
+  print(i)
+
+  # a dummy variable to build in the loop
+  ell <- NULL
+  post.id <- NULL
+
+  for (j in 1:n.posts){
+
+    # covariance matrix
+    Sigma  <- matrix(ellipses.posterior[[i]][j,1:4], 2, 2)
+
+    # mean
+    mu  <- ellipses.posterior[[i]][j,5:6]
+
+    # ellipse points
+    out <- ellipse::ellipse(Sigma, centre = mu , level = p.ell)
+
+
+    ell <- rbind(ell, out)
+    post.id <- c(post.id, rep(j, nrow(out)))
+
+  }
+  ell <- as.data.frame(ell)
+  ell$rep <- post.id
+  all_ellipses[[i]] <- ell
+}
+
+# Merge all species together
+ellipse_df <- all_ellipses %>%
+  bind_rows(.id = "species") %>%
+  rename(d13C = x, d15N = y) %>%
+  mutate(species = case_when(species == 3 ~ "Bull",
+                             species == 1 ~ "Blacktip",
+                             species == 2 ~ "Bonnethead")) %>%
+  mutate(across(species, factor, level = c('Bull','Blacktip','Bonnethead')))
+
+
+
+p.cn <- ggplot() +
+  geom_point(data = sia %>%
+               rename(species = Species), aes(d13C, d15N, color = species), size = 2, alpha = 0.7) +
+  geom_path(data = ellipse_df %>%
+              filter(species == "Bull"), aes(d13C, d15N, group = rep, color = species),
+               alpha = 0.15) +
+  geom_path(data = ellipse_df %>%
+              filter(species == "Blacktip"), aes(d13C, d15N, group = rep, color = species),
+            alpha = 0.15) +
+  geom_path(data = ellipse_df %>%
+              filter(species == "Bonnethead"), aes(d13C, d15N, group = rep, color = species),
+            alpha = 0.15) +
+  scale_color_met_d(name = "Egypt") +
+  labs(x = expression(paste(delta^{13}, "C (\u2030)")), y = expression(paste(delta^{15}, "N (\u2030)"))) +
+  theme_bw() +
+  theme(axis.text = element_text(size=16),
+        axis.title = element_text(size=18),
+        panel.grid = element_blank()) +
+  guides(color = "none")
+
+
+
+
+
+## Create composite plot for SIA
+p.cn / p.nw +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = 'a') &
+  theme(legend.position = 'top',
+        # plot.tag.position = c(0.09, 1),
+        plot.tag = element_text(size = 18, hjust = 0, vjust = 0, face = 'bold'))
+
+ggsave("Figures/SIA niche width.png", width = 6, height = 8, units = "in", dpi = 600)
 
 
 
@@ -149,9 +238,12 @@ sum(SEA.B[,3] > SEA.B[,2]) / nrow(SEA.B)  #Bonnethead shark has larger niche w/ 
 ### Calculate Bayesian niche overlap ###
 
 # Calc overlap of 95% ellipses
-overlap.cleu.clim <- bayesianOverlap("1.Cleu", "1.BT", ellipses.posterior,
-                                       draws = 10, p.interval = 0.95,
-                                       n = 360)
+tic()
+overlap.cleu.clim <- bayesianOverlap("1.Bull", "1.Blacktip", ellipses.posterior,
+                                       p.interval = 0.95, draws = 6000, n = 100)
+toc()  #took 13.5 min for 1000 draws
+BRRR::skrrrahh(sound = "khaled3")
+
 overlap.cleu.clim <- overlap.cleu.clim %>%
   mutate(cleu_onto_clim = overlap / area2,
          clim_onto_cleu = overlap / area1)
@@ -161,9 +253,12 @@ summarize(overlap.cleu.clim,
           mean.clim.cleu = mean(clim_onto_cleu),
           sd.clim.cleu = sd(clim_onto_cleu))
 
-overlap.cleu.stib <- bayesianOverlap("1.Cleu", "1.BH", ellipses.posterior,
-                                     draws = 10, p.interval = 0.95,
-                                     n = 360)
+tic()
+overlap.cleu.stib <- bayesianOverlap("1.Bull", "1.Bonnethead", ellipses.posterior,
+                                     p.interval = 0.95, draws = 6000, n = 100)
+toc()  #took 13.5 min for 1000 draws
+BRRR::skrrrahh(sound = "khaled3")
+
 overlap.cleu.stib <- overlap.cleu.stib %>%
   mutate(cleu_onto_stib = overlap / area2,
          stib_onto_cleu = overlap / area1)
@@ -173,9 +268,12 @@ summarize(overlap.cleu.stib,
           mean.stib.cleu = mean(stib_onto_cleu),
           sd.stib.cleu = sd(stib_onto_cleu))
 
-overlap.clim.stib <- bayesianOverlap("1.BT", "1.BH", ellipses.posterior,
-                                     draws = 10, p.interval = 0.95,
-                                     n = 360)
+tic()
+overlap.clim.stib <- bayesianOverlap("1.Blacktip", "1.Bonnethead", ellipses.posterior,
+                                     p.interval = 0.95, draws = 6000, n = 100)
+toc()  #took 13.5 min for 1000 draws
+BRRR::skrrrahh(sound = "khaled3")
+
 overlap.clim.stib <- overlap.clim.stib %>%
   mutate(clim_onto_stib = overlap / area2,
          stib_onto_clim = overlap / area1)
@@ -184,3 +282,39 @@ summarize(overlap.clim.stib,
           sd.clim.stib = sd(clim_onto_stib),
           mean.stib.clim = mean(stib_onto_clim),
           sd.stib.clim = sd(stib_onto_clim))
+
+
+
+# Create viz of overlap
+
+cleu.over <- data.frame(From = "Bull",
+                   To = rep(c("Blacktip", "Bonnethead"), each = nrow(overlap.cleu.clim)),
+                   overlap = c(overlap.cleu.clim$cleu_onto_clim, overlap.cleu.stib$cleu_onto_stib))
+clim.over <- data.frame(From = "Blacktip",
+                        To = rep(c("Bull", "Bonnethead"), each = nrow(overlap.cleu.clim)),
+                        overlap = c(overlap.cleu.clim$clim_onto_cleu, overlap.clim.stib$clim_onto_stib))
+stib.over <- data.frame(From = "Bonnethead",
+                        To = rep(c("Bull", "Blacktip"), each = nrow(overlap.cleu.clim)),
+                        overlap = c(overlap.cleu.stib$stib_onto_cleu, overlap.clim.stib$stib_onto_clim))
+
+over <- rbind(cleu.over, clim.over, stib.over) %>%
+  mutate(across(From:To, factor, level = c('Bull','Blacktip','Bonnethead')))
+
+
+ggplot(over, aes(overlap, fill = From)) +
+  geom_density(aes(color = From), size = 0.75) +
+  scale_fill_met_d(name = "Egypt") +
+  scale_color_met_d(name = "Egypt") +
+  labs(x = "Overlap Probability", y = "Density") +
+  scale_y_continuous(position = "right") +
+  scale_x_continuous(limits = c(0, 1.1), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        strip.text = element_text(size = 14, face = "bold"),
+        strip.background = element_blank(),
+        panel.grid = element_blank()) +
+  guides(fill = "none", color = "none") +
+  facet_grid(From ~ To, scales = "free_y", switch = "y")
+
+# ggsave("Figures/SIA niche overlap.png", width = 12, height = 8, units = "in", dpi = 600)
