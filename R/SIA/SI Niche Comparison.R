@@ -213,7 +213,7 @@ p.cn / p.nw +
         # plot.tag.position = c(0.09, 1),
         plot.tag = element_text(size = 18, hjust = 0, vjust = 0, face = 'bold'))
 
-ggsave("Figures/SIA niche width.png", width = 6, height = 8, units = "in", dpi = 600)
+# ggsave("Figures/SIA niche width.png", width = 6, height = 8, units = "in", dpi = 600)
 
 
 
@@ -223,13 +223,13 @@ ggsave("Figures/SIA niche width.png", width = 6, height = 8, units = "in", dpi =
 ## Calculate probability that posterior niche width of one species is larger than another
 
 # Bull vs blacktip
-sum(SEA.B[,1] > SEA.B[,2]) / nrow(SEA.B)  #Bull shark has larger niche w/ 100% probability
+sum(SEA.B[,3] > SEA.B[,1]) / nrow(SEA.B)  #Bull shark has larger niche w/ 100% probability
 
 # Bull vs bonnethead
-sum(SEA.B[,1] > SEA.B[,3]) / nrow(SEA.B)  #Bull shark has larger niche w/ 100% probability
+sum(SEA.B[,3] > SEA.B[,2]) / nrow(SEA.B)  #Bull shark has larger niche w/ 100% probability
 
 # Bonnethead vs blacktip
-sum(SEA.B[,3] > SEA.B[,2]) / nrow(SEA.B)  #Bonnethead shark has larger niche w/ 100% probability
+sum(SEA.B[,2] > SEA.B[,1]) / nrow(SEA.B)  #Bonnethead shark has larger niche w/ 100% probability
 
 
 
@@ -300,14 +300,20 @@ stib.over <- data.frame(From = "Bonnethead",
 over <- rbind(cleu.over, clim.over, stib.over) %>%
   mutate(across(From:To, factor, level = c('Bull','Blacktip','Bonnethead')))
 
+med.over <- over %>%
+  group_by(From, To) %>%
+  summarize(value = median(overlap)) %>%
+  ungroup()
 
-ggplot(over, aes(overlap, fill = From)) +
+
+ggplot(data = over, aes(overlap, fill = From)) +
   geom_density(aes(color = From), size = 0.75) +
+  geom_vline(data = med.over, aes(xintercept = value), size = 0.5) +
   scale_fill_met_d(name = "Egypt") +
   scale_color_met_d(name = "Egypt") +
   labs(x = "Overlap Probability", y = "Density") +
   scale_y_continuous(position = "right") +
-  scale_x_continuous(limits = c(0, 1.1), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
+  scale_x_continuous(limits = c(0, 1.04), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
   theme_bw() +
   theme(axis.text = element_text(size = 16),
         axis.title = element_text(size = 18),
