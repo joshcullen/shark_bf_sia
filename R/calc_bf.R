@@ -198,7 +198,6 @@ species <- ifelse(grepl(pattern = "Cleu", x = id), "Bull",
 
 out <- data.frame(SharkID = id,
                   Species = species,
-                  TL = bite$TL[1],
                   ABF = as.numeric(biABF$x))
 
 return(out)
