@@ -67,3 +67,19 @@ xprod <- function(...) {
 vect_mag <- function(x) {
   sqrt(x[1]^2 + x[2]^2 + x[3]^2)
 }
+
+#------------------------------------
+
+# Function to generate a polynomial expression from vector of coefficients
+# Copied from https://stackoverflow.com/questions/40438195/function-for-polynomials-of-arbitrary-order-symbolic-method-preferred/40442584#40442584
+
+## use `"x"` as variable name
+## taking polynomial coefficient vector `pc`
+## can return a string, or an expression by further parsing (mandatory for `D`)
+f <- function (pc, expr = TRUE) {
+  stringexpr <- paste("x", seq_along(pc) - 1, sep = " ^ ")
+  stringexpr <- paste(stringexpr, pc, sep = " * ")
+  stringexpr <- paste(stringexpr, collapse = " + ")
+  if (expr) return(parse(text = stringexpr))
+  else return(stringexpr)
+}
