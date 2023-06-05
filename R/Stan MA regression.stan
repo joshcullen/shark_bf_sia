@@ -12,7 +12,7 @@ data {
 
 parameters {
   real log_a;
-  real<lower=0> b;
+  real b;
   real<lower=0> sigma;
 }
 
