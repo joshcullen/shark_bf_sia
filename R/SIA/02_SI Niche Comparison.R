@@ -84,7 +84,7 @@ SEA.B <- siberEllipses(ellipses.posterior)
 
 
 # Viz comparison of isotopic niche areas
-siberDensityPlot(SEA.B, xticklabels = c('Blacktip','Bonnethead', 'Bull'),
+siberDensityPlot(SEA.B, xticklabels = c('Bull', 'Blacktip','Bonnethead'),
                  xlab = c("Species"),
                  ylab = expression("Standard Ellipse Area " ('\u2030' ^2) ),
                  bty = "L",
@@ -93,18 +93,20 @@ siberDensityPlot(SEA.B, xticklabels = c('Blacktip','Bonnethead', 'Bull'),
 )
 
 SEA.B.df <- data.frame(SEA.B) %>%
-  rename(Blacktip = X1, Bonnethead = X2, Bull = X3) %>%
+  rename(Bull = X1, Blacktip = X2, Bonnethead = X3) %>%
   mutate(iter = 1:n()) %>%
   pivot_longer(cols = -iter, names_to = "species", values_to = 'SEA') %>%
-  mutate(across(species, factor, level = c('Bull','Blacktip','Bonnethead')))
+  mutate(across(species, \(x) factor(x, level = c('Bull','Blacktip','Bonnethead'))
+                )
+         )
 
 
 p.nw <- ggplot(SEA.B.df, aes(species, SEA)) +
   ggdist::stat_halfeye(aes(fill = species), adjust = 0.5, width = 0.6, .width = 0,
                        justification = -0.3, point_color = NA) +
-  scale_fill_met_d(name = "Egypt") +
+  scale_fill_met_d(palette_name = "Egypt") +
   geom_jitter(aes(color = species), width = .05, alpha = .05) +
-  scale_color_met_d(name = "Egypt") +
+  scale_color_met_d(palette_name = "Egypt") +
   geom_boxplot(width = 0.2, outlier.shape = NA, fill = "transparent") +
   scale_y_continuous(breaks = seq(0, 14, by = 2)) +
   labs(x = "", y = expression("Ellipse Area " ('\u2030' ^2) )) +
@@ -174,9 +176,9 @@ for (i in 1:length(ellipses.posterior)){
 ellipse_df <- all_ellipses %>%
   bind_rows(.id = "species") %>%
   rename(d13C = x, d15N = y) %>%
-  mutate(species = case_when(species == 3 ~ "Bull",
-                             species == 1 ~ "Blacktip",
-                             species == 2 ~ "Bonnethead")) %>%
+  mutate(species = case_when(species == 1 ~ "Bull",
+                             species == 2 ~ "Blacktip",
+                             species == 3 ~ "Bonnethead")) %>%
   mutate(across(species, factor, level = c('Bull','Blacktip','Bonnethead')))
 
 
@@ -193,7 +195,7 @@ p.cn <- ggplot() +
   geom_path(data = ellipse_df %>%
               filter(species == "Bonnethead"), aes(d13C, d15N, group = rep, color = species),
             alpha = 0.15) +
-  scale_color_met_d(name = "Egypt") +
+  scale_color_met_d(palette_name = "Egypt") +
   labs(x = expression(paste(delta^{13}, "C (\u2030)")), y = expression(paste(delta^{15}, "N (\u2030)"))) +
   theme_bw() +
   theme(axis.text = element_text(size=16),
@@ -240,8 +242,8 @@ sum(SEA.B[,2] > SEA.B[,1]) / nrow(SEA.B)  #Bonnethead shark has larger niche w/ 
 # Calc overlap of 95% ellipses
 tic()
 overlap.cleu.clim <- bayesianOverlap("1.Bull", "1.Blacktip", ellipses.posterior,
-                                       p.interval = 0.95, draws = 6000, n = 100)
-toc()  #took 13.5 min for 1000 draws
+                                       p.interval = 0.95, draws = 1000, n = 100)
+toc()  #took 1 min for 1000 draws
 BRRR::skrrrahh(sound = "khaled3")
 
 overlap.cleu.clim <- overlap.cleu.clim %>%
@@ -255,8 +257,8 @@ summarize(overlap.cleu.clim,
 
 tic()
 overlap.cleu.stib <- bayesianOverlap("1.Bull", "1.Bonnethead", ellipses.posterior,
-                                     p.interval = 0.95, draws = 6000, n = 100)
-toc()  #took 13.5 min for 1000 draws
+                                     p.interval = 0.95, draws = 1000, n = 100)
+toc()  #took 1 min for 1000 draws
 BRRR::skrrrahh(sound = "khaled3")
 
 overlap.cleu.stib <- overlap.cleu.stib %>%
@@ -270,8 +272,8 @@ summarize(overlap.cleu.stib,
 
 tic()
 overlap.clim.stib <- bayesianOverlap("1.Blacktip", "1.Bonnethead", ellipses.posterior,
-                                     p.interval = 0.95, draws = 6000, n = 100)
-toc()  #took 13.5 min for 1000 draws
+                                     p.interval = 0.95, draws = 1000, n = 100)
+toc()  #took 1 min for 1000 draws
 BRRR::skrrrahh(sound = "khaled3")
 
 overlap.clim.stib <- overlap.clim.stib %>%
@@ -308,9 +310,9 @@ med.over <- over %>%
 
 ggplot(data = over, aes(overlap, fill = From)) +
   geom_density(aes(color = From), size = 0.75) +
-  geom_vline(data = med.over, aes(xintercept = value), size = 0.5) +
-  scale_fill_met_d(name = "Egypt") +
-  scale_color_met_d(name = "Egypt") +
+  geom_vline(data = med.over, aes(xintercept = value), linewidth = 0.5) +
+  scale_fill_met_d(palette_name = "Egypt") +
+  scale_color_met_d(palette_name = "Egypt") +
   labs(x = "Overlap Probability", y = "Density") +
   scale_y_continuous(position = "right") +
   scale_x_continuous(limits = c(0, 1.04), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
