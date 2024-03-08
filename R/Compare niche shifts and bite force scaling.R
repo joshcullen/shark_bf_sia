@@ -44,6 +44,10 @@ dat_mod <- dat |>
   mutate(d13C = map(data, ~gam(d13C ~ s(FL, k = 5), data = .x, method = 'REML')),
          d15N = map(data, ~gam(d15N ~ s(FL, k = 5), data = .x, method = 'REML')))
 
+# Check goodness-of-fit
+map(dat_mod$d13C, gam.check)
+map(dat_mod$d15N, gam.check)
+
 # Determine which relationships are significant
 dat_mod2 <- dat_mod |>
   pivot_longer(cols = -c(Species, data), names_to = "mod", values_to = "fit") |>
