@@ -54,6 +54,9 @@ dat4 <- dat3 |>
 
 # Viz ABF vs FL w/ thresholds
 
+inflect.df <- data.frame(Species = unique(dat$Species)[1:2] ,
+                         FL = unlist(dat4$inflect)[1:2])
+
 ggplot(data = dat, aes(FL, ABF, color = Species, fill = Species)) +
   geom_point(size = 2, alpha = 0.7) +
   geom_smooth(formula = y ~ s(x, k = 5),
@@ -63,9 +66,7 @@ ggplot(data = dat, aes(FL, ABF, color = Species, fill = Species)) +
               ) +
   scale_color_met_d(palette_name = "Egypt", guide = "none") +
   scale_fill_met_d(palette_name = "Egypt", guide = "none") +
-  geom_vline(data = data.frame(Species = unique(dat$Species),
-                               FL = unlist(dat4$inflect)),
-             aes(xintercept = FL), color = "black", linewidth = 1) +
+  geom_vline(data = inflect.df, aes(xintercept = FL), color = "black", linewidth = 1) +
   theme_bw(base_size = 16) +
   labs(x = "FL (cm)", y = "ABF (N)") +
   theme(panel.grid = element_blank(),
