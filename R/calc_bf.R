@@ -183,7 +183,7 @@ uvABF <- rABF / vect_mag(rABF)
 #Proj(fv)=(fv dot uvABF)*uvABF for all muscle fvs
 
 orthog.ABF <- apply(Fm[,-1], 1, function(a) a %*% uvABF)
-biABF<- sum(orthog.ABF) * JAdil / ABPdol * 2 #bilateral ABF
+biABF<- sum(orthog.ABF) * AMA * 2 #bilateral ABF
 
 # orthog.PBF <- apply(Fm[,-1], 1, function(a) a %*% t(uvPBF))
 # biPBF<- sum(orthog.PBF) * JAdil / PBPdol * 2 #bilateral ABF
