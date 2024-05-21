@@ -115,7 +115,8 @@ AMA<- JAdil/ABPdol
 #dummy axis of jaw joints
 JJopp <- coords.mean[coords.mean$Muscle == "JJ", c('x','y','z')]
 JJopp[2] <- JJopp[2] - 15  #right JJ y-coord (-15) chosen at random
-rJJ <- (JJopp - coords.mean[coords.mean$Muscle == "JJ", c('x','y','z')]) / 15  #unit vector of JJ axis
+JJvect <- unlist(JJopp - coords.mean[coords.mean$Muscle == "JJ", c('x','y','z')])
+rJJ <- JJvect / vect_mag(JJvect)  #unit vector of JJ axis
 
 
 # Muscle unit vectors (insertion coord-origin coord)/magnitude
@@ -153,13 +154,13 @@ rM <- coords.mean %>%
 
 
 # Create perpendicular vector to that of ABP/PBP-JJ-JJopp
-rABP <- coords.mean %>%
+ABPvect <- coords.mean %>%
   filter(Muscle %in% c('ABP','JJ')) %>%
   arrange(desc(Muscle)) %>%
   dplyr::select(x, y, z) %>%
-  apply(., 2, diff) %>%
-  as.matrix() %>%
-  t()
+  apply(., 2, diff)
+rABP <- ABPvect / vect_mag(ABPvect)  #unit vector of ABP-JJ axis
+
 # rPBP <- coords.mean %>%
 #   filter(Muscle %in% c('PBP','JJ')) %>%
 #   dplyr::select(x, y, z) %>%
@@ -171,8 +172,7 @@ rABP <- coords.mean %>%
 
 
 # Cross product of unit vectors results in perp vector to describe BF direction
-rABF<- xprod(rABP, as.numeric(rJJ)) %>%
-  t()  #transpose from col to row vector
+rABF<- xprod(rABP, rJJ)
 uvABF <- rABF / vect_mag(rABF)
 
 # rPBF<- xprod(rPBP, as.numeric(rJJ)) %>%
@@ -182,7 +182,7 @@ uvABF <- rABF / vect_mag(rABF)
 
 #Proj(fv)=(fv dot uvABF)*uvABF for all muscle fvs
 
-orthog.ABF <- apply(Fm[,-1], 1, function(a) a %*% t(uvABF))
+orthog.ABF <- apply(Fm[,-1], 1, function(a) a %*% uvABF)
 biABF<- sum(orthog.ABF) * JAdil / ABPdol * 2 #bilateral ABF
 
 # orthog.PBF <- apply(Fm[,-1], 1, function(a) a %*% t(uvPBF))
