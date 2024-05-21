@@ -17,6 +17,7 @@ sia <- read.csv("Raw_data/SIA Master.csv")
 glimpse(sia)
 summary(sia)
 head(sia)
+
 sia$Species <- factor(sia$Species, level = c('Cleu','BT','BH'))
 levels(sia$Species) <- c('Bull','Blacktip','Bonnethead')
 
@@ -25,7 +26,7 @@ levels(sia$Species) <- c('Bull','Blacktip','Bonnethead')
 
 #Check for duplicates and remove record(s) for any duplicate IDs
 ind <- which(duplicated(sia$SharkID) | is.na(sia$TL))
-# sia <- sia[-ind,]
+sia <- sia[-ind,]
 
 
 
@@ -49,10 +50,8 @@ sia %>%
 sia2 <- sia[,c('d13C','d15N','Species')]
 
 set.seed(2024)
-tic()
-  sia.par <- tapply(1:nrow(sia2), sia2$Species,
-                     function(ii) niw.post(nsamples = 5e3, X = sia2[ii,1:2]))
-toc()
+sia.par <- tapply(1:nrow(sia2), sia2$Species,
+                  function(ii) niw.post(nsamples = 5e3, X = sia2[ii,1:2]))
 
 niche.par.plot(sia.par, col = met.brewer('Egypt', n = 3), plot.mu = TRUE, plot.Sigma = TRUE)
 legend("topright", legend = names(sia.par), fill = met.brewer('Egypt', n = 3))
