@@ -104,6 +104,7 @@ strip_cols <- strip_themed(
   by_layer_x = FALSE
   )
 
+
 ggplot() +
   geom_point(data = dat2, aes(FL, value, color = Species), size = 2, alpha = 0.7) +
   geom_point(data = dat2 |>
@@ -127,7 +128,7 @@ ggplot() +
         strip.text.x = element_text(color = "red"),
         panel.grid = element_blank())
 
-ggsave("Figures/Isotopes and BF over ontogeny.png", width = 10, height = 8, units = "in", dpi = 600)
+# ggsave("Figures/Figure 4.pdf", width = 10, height = 8, units = "in", dpi = 600, device = cairo_pdf)
 
 
 

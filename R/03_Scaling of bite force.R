@@ -471,7 +471,7 @@ cleu_plot + clim_plot + stib_plot +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 12))
 
-ggsave("Figures/ABF scaling estimates.png", width = 5, height = 7, units = "in", dpi = 600)
+# ggsave("Figures/Figure 3.pdf", width = 5, height = 7, units = "in", dpi = 600)
 
 
 
