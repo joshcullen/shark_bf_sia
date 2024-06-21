@@ -25,12 +25,12 @@ levels(sia_dat$Species) <- c('Bull','Blacktip','Bonnethead')
 # Join datasets
 dat <- full_join(bf_dat,
                  sia_dat[,c("SharkID", "Species", "FL", "d13C", "d15N")],
-                 by = c("SharkID", "Species", "FL")) |>
+                 by = c("SharkID","Species","FL")) |>
   drop_na(FL)
 
 
 # Define color palette for viz
-pal <- met.brewer(palette_name = "Egypt", n = 3, return_hex = TRUE)
+pal <- met.brewer(name = "Egypt", n = 3)
 
 
 
@@ -110,14 +110,14 @@ ggplot() +
   geom_point(data = dat2 |>
                filter(name == 'paste("ABF (N)")'),
              aes(FL, value), size = 2) +
-  scale_color_met_d(palette_name = "Egypt", guide = "none") +
+  scale_color_met_d(name = "Egypt") +
   geom_smooth(data = gam_smooth, mapping = aes(FL, value, color = Species, fill = Species),
               formula = y ~ s(x, k = 5),
               method = "gam", linewidth = 0.7,
               method.args = list(family = gaussian(link = "identity")),
               alpha = 0.2
   ) +
-  scale_fill_met_d(palette_name = "Egypt", guide = "none") +
+  scale_fill_met_d(name = "Egypt") +
   labs(x = "FL (cm)", y = "") +
   theme_bw(base_size = 14) +
   facet_grid2(name ~ Species, scales = "free", independent = "y", switch = "y",
@@ -126,9 +126,10 @@ ggplot() +
         strip.placement = "outside",
         strip.text = element_text(size = 14),
         strip.text.x = element_text(color = "red"),
-        panel.grid = element_blank())
+        panel.grid = element_blank(),
+        legend.position = "none")
 
-# ggsave("Figures/Figure 4.pdf", width = 10, height = 8, units = "in", dpi = 600, device = cairo_pdf)
+# ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
 
 
 
