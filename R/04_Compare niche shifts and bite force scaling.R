@@ -30,7 +30,7 @@ dat <- full_join(bf_dat,
 
 
 # Define color palette for viz
-pal <- met.brewer(name = "Egypt", n = 3)
+pal <- met.brewer("Egypt", n = 3)
 
 
 
@@ -60,9 +60,11 @@ dat_mod2 <- dat_mod |>
 gam_smooth <- dat |>
   select(Species, FL, ABF, d13C, d15N) |>
   pivot_longer(cols = -c(Species, FL)) |>
-  filter(Species == 'Blacktip' & name %in% c('d13C','d15N') |
-           Species == 'Bonnethead' & name == 'd13C' |
-           Species == 'Bull' & name == 'd13C') |>
+  # filter(Species == 'Blacktip' & name %in% c('d13C','d15N') |
+  #          Species == 'Bonnethead' & name == 'd13C' |
+  #          Species == 'Bull' & name == 'd13C') |>
+  inner_join(dat_mod2[,c('Species','mod')],
+             by = join_by("Species", "name" == "mod")) |>
   drop_na() |>
   mutate(Species = factor(Species, levels = c('Bull','Blacktip','Bonnethead')),
          name = case_when(name == 'd13C' ~ 'paste(delta^{13}, "C (\u2030)")',
@@ -96,6 +98,30 @@ dat2 <- dat |>
 levels(dat2$Species) <- c("bold(Bull)", "bold(Blacktip)", "bold(Bonnethead)")
 
 
+# Store R^2 results for showing w/ signif model fits
+r2_labs <- dat_mod2 |>
+  # Create new columns for species-specific metrics
+  mutate(R2 = map(fit, ~summary(.x)$r.sq),
+         FL = map(data, ~{max(.x$FL) * 0.9}),
+         value = case_when(mod == 'd13C' ~ map(data, ~{min(.x$d13C, na.rm = TRUE)}),
+                           mod == 'd15N' ~ map(data, ~{min(.x$d15N, na.rm = TRUE)})),
+         nudge = case_when(mod == 'd13C' ~ map(data, ~{abs(diff(range(.x$d13C, na.rm = TRUE))) / 24}),
+                           mod == 'd15N' ~ map(data, ~{abs(diff(range(.x$d15N, na.rm = TRUE))) / 24}))) |>
+  # Modify values as vector instead of list and add styling
+  mutate(R2 = round(unlist(R2), 2),
+         FL = unlist(FL),
+         value = unlist(value),
+         nudge = unlist(nudge),
+         name = case_when(mod == 'd13C' ~ 'paste(delta^{13}, "C (\u2030)")',
+                          mod == 'd15N' ~ 'paste(delta^{15}, "N (\u2030)")'),
+         Species = paste0("bold(", Species, ")")) |>
+  # Convert 'Species' and 'name' to factors
+  mutate(Species = factor(Species, levels = levels(dat2$Species)),
+         name = factor(name, levels = levels(dat2$name)),
+         value = value + nudge) |>
+  # Select only relevant columns
+  select(Species, mod, FL, value, R2, name)
+
 
 
 # Add color to species titles in plot
@@ -110,14 +136,17 @@ ggplot() +
   geom_point(data = dat2 |>
                filter(name == 'paste("ABF (N)")'),
              aes(FL, value), size = 2) +
-  scale_color_met_d(name = "Egypt") +
+  scale_color_met_d("Egypt") +
   geom_smooth(data = gam_smooth, mapping = aes(FL, value, color = Species, fill = Species),
               formula = y ~ s(x, k = 5),
               method = "gam", linewidth = 0.7,
               method.args = list(family = gaussian(link = "identity")),
               alpha = 0.2
   ) +
-  scale_fill_met_d(name = "Egypt") +
+  scale_fill_met_d("Egypt") +
+  geom_text(data = r2_labs, aes(x = FL, y = value,
+                                label = paste("italic(R)^2==", round(R2, 2))),
+            parse = TRUE) +
   labs(x = "FL (cm)", y = "") +
   theme_bw(base_size = 14) +
   facet_grid2(name ~ Species, scales = "free", independent = "y", switch = "y",
@@ -129,7 +158,7 @@ ggplot() +
         panel.grid = element_blank(),
         legend.position = "none")
 
-# ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
+ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
 
 
 

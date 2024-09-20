@@ -36,7 +36,11 @@ dat3 <- dat2 |>
   mutate(fit = map(data, ~gam(ABF ~ s(FL, k = 5), data = .x, method = 'REML'))
          )
 
-# Calculate 1st order derivatives and find max
+# Check goodness-of-fit
+map(dat3$fit, gam.check)
+
+
+# Calculate 1st order derivatives and find max (equivalent to root of 2nd derivative)
 dat4 <- dat3 |>
   mutate(deriv = map(fit, ~derivatives(object = .x, term = "FL", order = 1,
                                        partial_match = TRUE))) |>

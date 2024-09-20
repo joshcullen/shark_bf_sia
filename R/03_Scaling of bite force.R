@@ -48,7 +48,7 @@ stib <- dat %>%
 
 
 # Define color palette for viz
-pal <- met.brewer(name = "Egypt", n = 3)
+pal <- met.brewer("Egypt", n = 3)
 
 
 
@@ -119,6 +119,8 @@ cleu_plot <- ggplot() +
                   .width = c(.95, .5), color = pal[1], alpha = 0.25,
                   fill = pal[1], linewidth = 0.5) +
   geom_point(data = cleu, aes(x = FL, y = ABF), size = 2, color = pal[1], alpha = 0.7) +
+  annotate(geom = "text", x = max(cleu$FL) * 0.9, y = max(cleu$ABF) * 0.15,
+           label = paste("italic(R)^2==", round(mean(R2), 2)), parse = TRUE) +
   labs(x = 'FL (cm)', y = 'ABF (N)', title = "**<span style = 'color: #dd5129'>Bull</span>**") +
   theme_bw(base_size = 16) +
   theme(panel.grid = element_blank(),
@@ -190,9 +192,9 @@ ppc_dens_overlay(y = clim.s$ABF,
   theme_bw()
 
 ## Calculate R^2
-R2 <- bayes_R2(y_hat, clim.s$ABF)
-quantile(R2, c(0.025, 0.5, 0.95))
-mean(R2)  #0.85
+small.R2 <- bayes_R2(y_hat, clim.s$ABF)
+quantile(small.R2, c(0.025, 0.5, 0.95))
+mean(small.R2)  #0.85
 
 
 y_hat_clim_s <- y_hat %>%
@@ -251,9 +253,9 @@ ppc_dens_overlay(y = clim.l$ABF,
   theme_bw()
 
 ## Calculate R^2
-R2 <- bayes_R2(y_hat, clim.l$ABF)
-quantile(R2, c(0.025, 0.5, 0.95))
-mean(R2)  #0.34
+large.R2 <- bayes_R2(y_hat, clim.l$ABF)
+quantile(large.R2, c(0.025, 0.5, 0.95))
+mean(large.R2)  #0.34
 
 
 y_hat_clim_l <- y_hat %>%
@@ -278,6 +280,10 @@ ggplot() +
 
 ### Combine predictions from small and large blacktip sharks ###
 
+# Labels for adding R^2 values
+r2_labs <- c(paste("Small: italic(R)^2==", round(mean(small.R2), 2)),
+             paste("Large: italic(R)^2==", round(mean(large.R2), 2)))
+
 clim_plot <- ggplot() +
   ggdist::stat_lineribbon(data = y_hat_clim_s, aes(x = FL, y = prediction),
                           .width = c(.95, .5), color = pal[2], alpha = 0.25,
@@ -287,6 +293,11 @@ clim_plot <- ggplot() +
                           fill = pal[2], linewidth = 0.5) +
   geom_point(data = clim, aes(x = FL, y = ABF), size = 2, color = pal[2], alpha = 0.7) +
   geom_vline(xintercept = inflect.pts[1], linetype = "dashed") +
+  annotate(geom = "text",
+           x = max(clim$FL) * 0.9,
+           y = c(max(clim$ABF) * 0.2, max(clim$ABF) * 0.2 * 0.3),
+           label = r2_labs,
+           parse = TRUE) +
   labs(x = 'FL (cm)', y = 'ABF (N)', title = "**<span style = 'color: #0f7ba2'>Blacktip</span>**") +
   theme_bw(base_size = 16) +
   theme(panel.grid = element_blank(),
@@ -358,9 +369,9 @@ ppc_dens_overlay(y = stib.s$ABF,
   theme_bw()
 
 ## Calculate R^2
-R2 <- bayes_R2(y_hat, stib.s$ABF)
-quantile(R2, c(0.025, 0.5, 0.95))
-mean(R2)  #0.48
+small.R2 <- bayes_R2(y_hat, stib.s$ABF)
+quantile(small.R2, c(0.025, 0.5, 0.95))
+mean(small.R2)  #0.48
 
 
 y_hat_stib_s <- y_hat %>%
@@ -419,9 +430,9 @@ ppc_dens_overlay(y = stib.l$ABF,
   theme_bw()
 
 ## Calculate R^2
-R2 <- bayes_R2(y_hat, stib.l$ABF)
-quantile(R2, c(0.025, 0.5, 0.95))
-mean(R2)  #0.32
+large.R2 <- bayes_R2(y_hat, stib.l$ABF)
+quantile(large.R2, c(0.025, 0.5, 0.95))
+mean(large.R2)  #0.32
 
 
 y_hat_stib_l <- y_hat %>%
@@ -446,6 +457,11 @@ ggplot() +
 
 ### Combine predictions from small and large bonnethead sharks ###
 
+# Labels for adding R^2 values
+r2_labs <- c(paste("Small: italic(R)^2==", round(mean(small.R2), 2)),
+             paste("Large: italic(R)^2==", round(mean(large.R2), 2)))
+
+
 stib_plot <- ggplot() +
   ggdist::stat_lineribbon(data = y_hat_stib_s, aes(x = FL, y = prediction),
                           .width = c(.95, .5), color = pal[3], alpha = 0.25,
@@ -455,6 +471,11 @@ stib_plot <- ggplot() +
                           fill = pal[3], linewidth = 0.5) +
   geom_point(data = stib, aes(x = FL, y = ABF), size = 2, color = pal[3], alpha = 0.7) +
   geom_vline(xintercept = inflect.pts[2], linetype = "dashed") +
+  annotate(geom = "text",
+           x = max(stib$FL) * 0.9,
+           y = c(max(stib$ABF) * 0.17, max(stib$ABF) * 0.17 * 0.01),
+           label = r2_labs,
+           parse = TRUE) +
   labs(x = 'FL (cm)', y = 'ABF (N)', title = "**<span style = 'color: #43b284'>Bonnethead</span>**") +
   theme_bw(base_size = 16) +
   theme(panel.grid = element_blank(),
@@ -471,7 +492,7 @@ cleu_plot + clim_plot + stib_plot +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 12))
 
-# ggsave("Figures/Figure 3.tiff", width = 5, height = 7, units = "in", dpi = 400)
+ggsave("Figures/Figure 3.tiff", width = 5, height = 7, units = "in", dpi = 400)
 
 
 
