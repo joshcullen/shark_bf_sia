@@ -162,3 +162,29 @@ ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
 
 
 
+
+
+
+#######################################################
+### Directly compare bite force and stable isotopes ###
+#######################################################
+
+dat3 <- dat |>
+  nest(.by = Species) |>
+  mutate(d13C_fit = map(data, ~gam(d13C ~ s(ABF, k = 5), data = .x, method = 'REML')),
+         d15N_fit = map(data, ~gam(d15N ~ s(ABF, k = 5), data = .x, method = 'REML'))
+  )
+
+
+
+ggplot(data = dat |>
+         pivot_longer(cols = c(d13C, d15N), names_to = "iso", values_to = "value"),
+       aes(ABF, value, color = Species)) +
+  geom_point() +
+  geom_smooth(formula = y ~ s(x, k = 5),
+              method = "gam", linewidth = 0.7,
+              method.args = list(family = gaussian(link = "identity")),
+              alpha = 0.2
+  ) +
+  theme_bw() +
+  facet_grid(iso ~ Species, scales = "free")
