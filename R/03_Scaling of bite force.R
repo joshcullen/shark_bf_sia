@@ -492,7 +492,7 @@ cleu_plot + clim_plot + stib_plot +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 12))
 
-ggsave("Figures/Figure 3.tiff", width = 5, height = 7, units = "in", dpi = 400)
+ggsave("Figures/Figure 2.tiff", width = 5, height = 7, units = "in", dpi = 400)
 
 
 

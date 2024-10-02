@@ -6,6 +6,8 @@ library(patchwork)
 library(MetBrewer)
 library(ggh4x)
 library(mgcv)
+library(slider)
+
 
 
 #################
@@ -79,9 +81,7 @@ levels(gam_smooth$Species) <- c("bold(Bull)", "bold(Blacktip)", "bold(Bonnethead
 
 
 
-###############################
 ### Visualize relationships ###
-###############################
 
 # Reformat data
 dat2 <- dat |>
@@ -158,7 +158,7 @@ ggplot() +
         panel.grid = element_blank(),
         legend.position = "none")
 
-ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
+ggsave("Figures/Figure 3.tiff", width = 10, height = 8, units = "in", dpi = 300)
 
 
 
@@ -169,22 +169,38 @@ ggsave("Figures/Figure 4.tiff", width = 10, height = 8, units = "in", dpi = 300)
 ### Directly compare bite force and stable isotopes ###
 #######################################################
 
-dat3 <- dat |>
-  nest(.by = Species) |>
-  mutate(d13C_fit = map(data, ~gam(d13C ~ s(ABF, k = 5), data = .x, method = 'REML')),
-         d15N_fit = map(data, ~gam(d15N ~ s(ABF, k = 5), data = .x, method = 'REML'))
-  )
+### Calculate correlation using sliding window ###
+
+dat4 <- dat |>
+  group_by(Species) |>
+  arrange(Species, FL) |>
+  mutate(corr_d15N = slide_index2_dbl(.x = ABF,
+                                 .y = d15N,
+                                 .i = FL,
+                                 .f = ~cor(.x, .y, use = "na.or.complete"),
+                                 .before = 5,  #up to 5 cm FL less
+                                 .after = 5),  #up to 5 cm FL more
+         corr_d13C = slide_index2_dbl(.x = ABF,
+                                .y = d13C,
+                                .i = FL,
+                                .f = ~cor(.x, .y, use = "na.or.complete"),
+                                .before = 5,  #up to 5 cm FL less
+                                .after = 5)  #up to 5 cm FL more
+         ) |>
+  ungroup()
 
 
 
-ggplot(data = dat |>
-         pivot_longer(cols = c(d13C, d15N), names_to = "iso", values_to = "value"),
-       aes(ABF, value, color = Species)) +
-  geom_point() +
-  geom_smooth(formula = y ~ s(x, k = 5),
-              method = "gam", linewidth = 0.7,
-              method.args = list(family = gaussian(link = "identity")),
-              alpha = 0.2
-  ) +
-  theme_bw() +
-  facet_grid(iso ~ Species, scales = "free")
+# Viz relationships
+dat4 |>
+  select(Species, FL, corr_d15N, corr_d13C) |>
+  pivot_longer(cols = c(corr_d13C, corr_d15N)) |>
+  mutate(Species = factor(Species, levels = c("Bull", "Blacktip", "Bonnethead"))) |>
+
+ggplot() +
+  geom_line(aes(FL, value, color = Species), linewidth = 1.25) +
+  geom_hline(yintercept = 0) +
+  scale_color_met_d("Egypt", guide = "none") +
+  labs(x = "FL (cm)", y = "Correlation", title = "Correlation between bite force and stable isotopes") +
+  theme_bw(base_size = 14) +
+  facet_grid(name ~ Species, scales = "free_x")

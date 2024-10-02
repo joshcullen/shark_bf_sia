@@ -171,7 +171,7 @@ p.cn / p.nw +
         # plot.tag.position = c(0.09, 1),
         plot.tag = element_text(size = 18, hjust = 0, vjust = 0))
 
-# ggsave("Figures/Figure 5.tiff", width = 6, height = 8, units = "in", dpi = 400)
+ggsave("Figures/Figure 4.tiff", width = 6, height = 8, units = "in", dpi = 400)
 
 
 
@@ -251,4 +251,4 @@ ggplot(data = over_stat_df, aes(over, fill = species_b)) +
                      independent = "y",
                      scales = "free_y")
 
-# ggsave("Figures/Figure 6.tiff", width = 12, height = 8, units = "in", dpi = 300)
+ggsave("Figures/Figure 5.tiff", width = 12, height = 8, units = "in", dpi = 300)
