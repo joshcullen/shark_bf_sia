@@ -80,4 +80,4 @@ ggplot(data = dat, aes(FL, ABF, color = Species, fill = Species)) +
   facet_wrap(~ Species, scales = "free", ncol = 1)
 
 
-# ggsave("Figures/Figure S1.tiff", width = 5, height = 7, units = "in", dpi = 400)
+# ggsave("Figures/Figure S2.tiff", width = 5, height = 7, units = "in", dpi = 400)

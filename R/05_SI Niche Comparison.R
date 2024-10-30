@@ -71,13 +71,13 @@ sia2 %>%
 
 
 # Mean and SD of d13C and d15N by spp and season
-sia2 %>%
+(sia_szn_n <- sia2 %>%
   group_by(Species, season) %>%
   summarize(mean.C = mean(d13C),
             sd.C = sd(d13C),
             mean.N = mean(d15N),
             sd.N = sd(d15N),
-            n = n())
+            n = n()))
 
 
 #######################################################
@@ -90,8 +90,20 @@ sia2 %>%
 
 ggplot(aes(TL)) +
   geom_density(aes(fill = Species)) +
+  geom_rug() +
+  scale_fill_met_d("Egypt", guide = "none") +
+  labs(x = "TL (cm)", y = "Density") +
   theme_bw(base_size = 14) +
+  theme(#axis.text = element_text(size=16),
+        #axis.title = element_text(size=18),
+        panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 14, face = "bold")) +
   facet_grid(season ~ Species, scales = "free_x")
+
+ggsave("Figures/Figure S1.tiff", width = 8, height = 6, units = "in", dpi = 400)
+
+
 
 
 
@@ -174,7 +186,7 @@ p.cn <- ggplot() +
   geom_point(data = sia, aes(d13C, d15N, color = Species), size = 2, alpha = 0.7) +
   geom_path(data = ellipse_df, aes(d13C, d15N, group = interaction(rep, Species), color = Species),
             alpha = 0.15) +
-  scale_color_met_d(name = "Egypt") +
+  scale_color_met_d("Egypt") +
   labs(x = expression(paste(delta^{13}, "C (\u2030)")), y = expression(paste(delta^{15}, "N (\u2030)"))) +
   theme_bw() +
   theme(axis.text = element_text(size=16),
@@ -207,9 +219,9 @@ niche.width.df <- data.frame(niche.width) |>
 p.nw <- ggplot(niche.width.df, aes(Species, niche_width)) +
   ggdist::stat_halfeye(aes(fill = Species), adjust = 0.5, width = 0.6, .width = 0,
                        justification = -0.3, point_color = NA) +
-  scale_fill_met_d(name = "Egypt") +
+  scale_fill_met_d("Egypt") +
   geom_jitter(aes(color = Species), width = .05, alpha = .05) +
-  scale_color_met_d(name = "Egypt") +
+  scale_color_met_d("Egypt") +
   geom_boxplot(width = 0.2, outlier.shape = NA, fill = "transparent") +
   # scale_y_continuous(breaks = seq(0, 14, by = 2)) +
   labs(x = "", y = expression("Ellipse Area " ('\u2030' ^2) )) +
@@ -279,18 +291,26 @@ ellipse_df_szn <- all_ellipses_szn |>
 
 
 # Create plot of ellipses
-p.cn.szn <- ggplot() +
+ggplot() +
   geom_point(data = sia4, aes(d13C, d15N, color = Species), size = 2, alpha = 0.7) +
   geom_path(data = ellipse_df_szn, aes(d13C, d15N, group = interaction(rep, Species),
                                        color = Species), alpha = 0.15) +
   scale_color_met_d("Egypt") +
   labs(x = expression(paste(delta^{13}, "C (\u2030)")), y = expression(paste(delta^{15}, "N (\u2030)"))) +
+  coord_equal() +
   theme_bw() +
-  theme(axis.text = element_text(size=16),
-        axis.title = element_text(size=18),
-        panel.grid = element_blank()) +
-  # guides(color = "none") +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18),
+        panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 14, face = "bold"),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.position = c(0.9,0.1),
+        legend.justification = c(1,0)) +
   facet_wrap(~ season, nrow = 2)
+
+ggsave("Figures/Figure S3.tiff", width = 6, height = 5, units = "in", dpi = 400)
 
 
 
@@ -316,38 +336,34 @@ niche.width.szn.df <- data.frame(niche.width.szn) |>
          season = factor(season, levels = c('Spring','Summer','Fall')))
 
 
-p.nw.szn <- ggplot(niche.width.szn.df, aes(Species, niche_width)) +
+# create labels for N by spp x season
+sia_szn_labs <- sia_szn_n |>
+  drop_na(season) |>
+  select(Species, season, n) |>
+  mutate(y = -2)
+
+
+ggplot(niche.width.szn.df, aes(season, niche_width)) +
   ggdist::stat_halfeye(aes(fill = Species), adjust = 0.5, width = 0.6, .width = 0,
                        justification = -0.3, point_color = NA) +
-  scale_fill_met_d("Egypt") +
+  scale_fill_met_d("Egypt", guide = "none") +
   geom_jitter(aes(color = Species), width = .05, alpha = .05) +
-  scale_color_met_d("Egypt") +
+  scale_color_met_d("Egypt", guide = "none") +
   geom_boxplot(width = 0.2, outlier.shape = NA, fill = "transparent") +
-  # scale_y_continuous(breaks = seq(0, 14, by = 2)) +
+  geom_text(data = sia_szn_labs,
+            aes(season, y, label = paste0("n=",n)), size = 5) +
   labs(x = "", y = expression("Ellipse Area " ('\u2030' ^2) )) +
   theme_bw() +
-  theme(panel.grid = element_blank(),
+  theme(axis.text = element_text(size = 16),
         axis.title = element_text(size = 18),
-        axis.text = element_text(size = 14),
-        legend.title = element_blank(),
-        legend.position = c(0.85, 0.85),
-        legend.text = element_text(size = 12)) +
-  facet_wrap(~ season, nrow = 2)
+        panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 14, face = "bold")) +
+  facet_wrap(~ Species, nrow = 3, scales = "free_y")
+
+ggsave("Figures/Figure S4.tiff", width = 6, height = 8, units = "in", dpi = 400)
 
 
-
-
-
-### Create composite plot ###
-
-p.cn.szn / p.nw.szn +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = 'A', tag_prefix = "(", tag_suffix = ")") &
-  theme(legend.position = 'top',
-        # plot.tag.position = c(0.09, 1),
-        plot.tag = element_text(size = 18, hjust = 0, vjust = 0))
-
-ggsave("Figures/Figure S2.tiff", width = 6, height = 8, units = "in", dpi = 400)
 
 
 
